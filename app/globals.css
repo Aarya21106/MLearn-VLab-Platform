@@ -127,5 +127,8 @@
   }
   html {
     @apply font-sans;
+    /* Slightly larger than the 16px browser default so all rem-based
+       Tailwind text sizes (text-sm, text-xs, ...) scale up together. */
+    font-size: 18px;
   }
 }

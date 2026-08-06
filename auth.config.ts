@@ -7,8 +7,10 @@ import type { NextAuthConfig } from "next-auth";
  * providers and the adapter lives in auth.ts (Node.js runtime only).
  */
 export const authConfig = {
+  trustHost: true,
   pages: {
     signIn: "/",
+    error: "/",
   },
   providers: [],
   callbacks: {

@@ -4,13 +4,18 @@ import { Button } from "@/components/ui/button";
 export function GoogleSignInButton() {
   return (
     <form
+      className="w-full"
       action={async () => {
         "use server";
         await signIn("google", { redirectTo: "/post-login" });
       }}
     >
-      <Button type="submit" size="lg" className="w-full gap-2">
-        <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
+      <Button
+        type="submit"
+        size="lg"
+        className="w-full gap-3 shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 font-semibold cursor-pointer"
+      >
+        <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0" aria-hidden="true">
           <path
             fill="currentColor"
             d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"

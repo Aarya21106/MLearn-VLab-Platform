@@ -6,7 +6,10 @@ import { MarkdownContent } from "@/components/markdown-content";
 import { HintsPanel } from "@/components/hints-panel";
 import { SessionTimer } from "@/components/session-timer";
 import { Notebook } from "@/components/notebook";
+import { ExperimentTimerProvider } from "@/components/experiment-timer-context";
 import { requireUser } from "@/lib/auth-helpers";
+import { prisma } from "@/lib/prisma";
+import { logExperimentOpened } from "@/app/lab/actions";
 import { getAllExperiments, getCompletedOrderIndexes, isUnlocked } from "@/lib/experiments";
 
 export default async function ExperimentPage({
@@ -28,8 +31,20 @@ export default async function ExperimentPage({
   if (!experiment) notFound();
   if (!isUnlocked(orderIndex, completed)) redirect("/lab");
 
+  const existingSubmission = await prisma.submission.findFirst({
+    where: { userId: user.id, experimentId: experiment.id },
+    orderBy: { attemptNumber: "desc" },
+    select: { timeSpentSeconds: true },
+  });
+
+  await logExperimentOpened(experiment.id);
+
   return (
-    <>
+    <ExperimentTimerProvider
+      key={experiment.id}
+      experimentId={experiment.id}
+      initialSeconds={existingSubmission?.timeSpentSeconds ?? 0}
+    >
       <header className="flex shrink-0 items-center justify-between border-b border-border px-6 py-3">
         <div className="flex items-center gap-3">
           <h1 className="text-base font-semibold text-foreground">{experiment.title}</h1>
@@ -37,7 +52,7 @@ export default async function ExperimentPage({
             {experiment.syllabusUnit}
           </Badge>
         </div>
-        <SessionTimer key={experiment.id} />
+        <SessionTimer />
       </header>
 
       <div className="flex min-h-0 flex-1">
@@ -85,6 +100,6 @@ export default async function ExperimentPage({
           </Tabs>
         </aside>
       </div>
-    </>
+    </ExperimentTimerProvider>
   );
 }

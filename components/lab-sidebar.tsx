@@ -7,6 +7,7 @@ import { signOut } from "next-auth/react";
 import { Lock, CircleCheck, Circle, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DisplayNameEditor } from "@/components/display-name-editor";
+import { logLogout } from "@/app/lab/actions";
 
 type SidebarExperiment = {
   orderIndex: number;
@@ -89,7 +90,10 @@ export function LabSidebar({
         <DisplayNameEditor currentName={currentName} />
         <button
           type="button"
-          onClick={() => signOut({ callbackUrl: "/" })}
+          onClick={async () => {
+            await logLogout();
+            await signOut({ callbackUrl: "/" });
+          }}
           className="shrink-0 text-muted-foreground hover:text-foreground"
           title="Sign out"
         >

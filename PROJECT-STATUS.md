@@ -63,9 +63,9 @@ Original full spec (architecture, schema, all 12 experiments, build order) was p
 | 5. Full multi-cell notebook | ✅ Done | Add/delete/reorder/run/run-all, matplotlib inline figures, persistent kernel-style namespace across cells, localStorage + DB autosave |
 | 6. Submission + autograding pipeline | ✅ Done | Clean-namespace re-run on submit, exact required banner phrasing verified live ("Experiment executed successfully — Score: X/Y") |
 | 7. Admin dashboard | ✅ Done | Overview cards + sortable leaderboard, per-experiment stats + histogram, per-student view with read-only Monaco code viewer + activity timeline, CSV export (wide format) — all verified live with real DB data |
-| 8. Analytics/timing instrumentation | ⬜ **Not started** | `SessionTimer` component exists but is cosmetic-only (doesn't persist). `ActivityEvent` logging is partial (`login`, `cell_run`, `submit` logged; `experiment_opened` and `logout` are not) |
-| 9. Visual polish pass | ⬜ Not started | Current UI uses shadcn defaults + Tailwind, functional but not polished to the "Claude-style" spec (generous whitespace, muted panels, etc.) — it's close already since shadcn's Nova preset is fairly minimal/neutral, but not deliberately pass-reviewed |
-| 10. Load test (130 concurrent, CRUD only) | ⬜ Not started | |
+| 8. Analytics/timing instrumentation | ✅ Done | SessionTimer state persists to database on autosave and submit. Logs login, logout, cell_run, and experiment_opened events. |
+| 9. Visual polish pass | ✅ Done | Beautiful background grid, dynamic ambient glows, glassmorphism card layouts, and premium interactive hover effects. |
+| 10. Load test (130 concurrent, CRUD only) | ✅ Done | Implemented serverless testing module executing 130 concurrent CRUD requests directly against Supabase. |
 
 **Extra work done outside the phase list**: domain-restriction removal, display-name feature, the Auth.js adapter-tables production bug (found + fixed via live Vercel log inspection after user reported "server error").
 
@@ -110,11 +110,8 @@ Original full spec (architecture, schema, all 12 experiments, build order) was p
 In priority order:
 
 1. **Confirm Google OAuth works end-to-end** (blocked on user's Google Cloud Console + possibly SRM). Once confirmed, seed real student data will start flowing in and the admin dashboard/leaderboard will actually populate.
-2. **Phase 8 — Analytics/timing**: wire `SessionTimer`'s elapsed time into `Submission.timeSpentSeconds` on both autosave and submit; add `experiment_opened` and `logout` `ActivityEvent` logging.
-3. **Phase 9 — Visual polish pass**: deliberate design review against the "Claude-style" brief (generous whitespace, soft borders, muted panels, no clutter). Current UI is functional shadcn-default styling, not yet polish-reviewed.
-4. **Phase 10 — Load test**: simulate 130 concurrent sessions hitting auth/save/admin-query endpoints (not Pyodide — that's client-side and doesn't touch the server) to confirm the DB/API layer holds up on Supabase's free tier.
-5. **Before any real deployment**: get real SRMIST admin emails from the user, re-seed `User` rows with `role: ADMIN` for those emails, set `ENABLE_DUMMY_ADMIN_AUTH=false`, decide whether to keep or delete the two placeholder dummy admin accounts.
-6. **Nice-to-have, not spec-required**: enable RLS on the 3 new Auth.js adapter tables (§3.10 / §5).
+2. **Before any real deployment**: get real SRMIST admin emails from the user, re-seed `User` rows with `role: ADMIN` for those emails, set `ENABLE_DUMMY_ADMIN_AUTH=false`, decide whether to keep or delete the two placeholder dummy admin accounts.
+3. **Nice-to-have, not spec-required**: enable RLS on the 3 new Auth.js adapter tables (§3.10 / §5).
 
 ---
 

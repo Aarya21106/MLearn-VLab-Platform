@@ -7,7 +7,12 @@ import { prisma } from "@/lib/prisma";
  * run, so admins can see in-progress work, not just final submissions.
  * Never overwrites an already-COMPLETED submission - that's the Phase 6
  * submit pipeline's job, using a fresh attempt instead. */
-export async function saveNotebookProgress(experimentId: string, code: string, outputLog: string) {
+export async function saveNotebookProgress(
+  experimentId: string,
+  code: string,
+  outputLog: string,
+  timeSpentSeconds: number = 0
+) {
   const user = await requireUser();
 
   const existing = await prisma.submission.findFirst({
@@ -15,11 +20,18 @@ export async function saveNotebookProgress(experimentId: string, code: string, o
     orderBy: { attemptNumber: "desc" },
   });
 
+  const finalTimeSpent = Math.max(existing?.timeSpentSeconds ?? 0, Math.floor(timeSpentSeconds));
+
   if (existing) {
     if (existing.status === "COMPLETED") return;
     await prisma.submission.update({
       where: { id: existing.id },
-      data: { code, outputLog, status: "IN_PROGRESS" },
+      data: {
+        code,
+        outputLog,
+        status: "IN_PROGRESS",
+        timeSpentSeconds: finalTimeSpent,
+      },
     });
   } else {
     await prisma.submission.create({
@@ -30,12 +42,18 @@ export async function saveNotebookProgress(experimentId: string, code: string, o
         outputLog,
         status: "IN_PROGRESS",
         attemptNumber: 1,
+        timeSpentSeconds: finalTimeSpent,
       },
     });
   }
 
   await prisma.activityEvent.create({
-    data: { userId: user.id, type: "cell_run", experimentId },
+    data: {
+      userId: user.id,
+      type: "cell_run",
+      experimentId,
+      metadata: { timeSpentSeconds: finalTimeSpent },
+    },
   });
 }
 
@@ -53,7 +71,8 @@ export async function submitExperiment(
   experimentId: string,
   code: string,
   outputLog: string,
-  report: AutograderReport
+  report: AutograderReport,
+  timeSpentSeconds: number = 0
 ) {
   const user = await requireUser();
 
@@ -63,6 +82,8 @@ export async function submitExperiment(
     where: { userId: user.id, experimentId },
     orderBy: { attemptNumber: "desc" },
   });
+
+  const finalTimeSpent = Math.max(existing?.timeSpentSeconds ?? 0, Math.floor(timeSpentSeconds));
 
   if (!existing) {
     await prisma.submission.create({
@@ -74,6 +95,7 @@ export async function submitExperiment(
         status,
         score: report.score,
         autograderReport: JSON.stringify(report),
+        timeSpentSeconds: finalTimeSpent,
         attemptNumber: 1,
         submittedAt: new Date(),
       },
@@ -90,6 +112,7 @@ export async function submitExperiment(
         status,
         score: report.score,
         autograderReport: JSON.stringify(report),
+        timeSpentSeconds: finalTimeSpent,
         attemptNumber: existing.attemptNumber + 1,
         submittedAt: new Date(),
       },
@@ -103,14 +126,51 @@ export async function submitExperiment(
         status,
         score: report.score,
         autograderReport: JSON.stringify(report),
+        timeSpentSeconds: finalTimeSpent,
         submittedAt: new Date(),
       },
     });
   }
 
   await prisma.activityEvent.create({
-    data: { userId: user.id, type: "submit", experimentId, metadata: { score: report.score, status } },
+    data: {
+      userId: user.id,
+      type: "submit",
+      experimentId,
+      metadata: { score: report.score, status, timeSpentSeconds: finalTimeSpent },
+    },
   });
 
   return { status, score: report.score };
+}
+
+/** Records an experiment_opened activity event when a student accesses a lab. */
+export async function logExperimentOpened(experimentId: string) {
+  try {
+    const user = await requireUser();
+    await prisma.activityEvent.create({
+      data: {
+        userId: user.id,
+        type: "experiment_opened",
+        experimentId,
+      },
+    });
+  } catch (err) {
+    console.error("Failed to log experiment_opened event:", err);
+  }
+}
+
+/** Records a logout activity event before session teardown. */
+export async function logLogout() {
+  try {
+    const user = await requireUser();
+    await prisma.activityEvent.create({
+      data: {
+        userId: user.id,
+        type: "logout",
+      },
+    });
+  } catch (err) {
+    console.error("Failed to log logout event:", err);
+  }
 }

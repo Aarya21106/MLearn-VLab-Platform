@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
+import { Download, Zap } from "lucide-react";
 import { requireAdmin } from "@/lib/auth-helpers";
 import { getOverviewStats, getLeaderboard } from "@/lib/admin";
 import { getAllExperiments } from "@/lib/experiments";
@@ -19,12 +19,20 @@ export default async function AdminOverviewPage() {
     <main className="mx-auto max-w-5xl px-6 py-8">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-xl font-semibold text-foreground">Overview</h1>
-        <a href="/admin/export">
-          <Button variant="outline" size="sm" className="gap-1.5">
-            <Download className="size-3.5" />
-            Export CSV
-          </Button>
-        </a>
+        <div className="flex items-center gap-2">
+          <Link href="/admin/load-test">
+            <Button variant="outline" size="sm" className="gap-1.5 cursor-pointer">
+              <Zap className="size-3.5 text-yellow-500 fill-yellow-500" />
+              Performance Test
+            </Button>
+          </Link>
+          <a href="/admin/export">
+            <Button variant="outline" size="sm" className="gap-1.5 cursor-pointer">
+              <Download className="size-3.5" />
+              Export CSV
+            </Button>
+          </a>
+        </div>
       </div>
 
       <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4">

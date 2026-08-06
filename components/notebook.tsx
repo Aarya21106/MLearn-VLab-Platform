@@ -17,8 +17,10 @@ import {
   XCircle,
   Send,
 } from "lucide-react";
+import { toast } from "sonner";
 import { usePyodideWorker, type RunResult } from "@/hooks/use-pyodide-worker";
 import { saveNotebookProgress, submitExperiment } from "@/app/lab/actions";
+import { useGetExperimentSeconds } from "@/components/experiment-timer-context";
 
 type Cell = {
   id: string;
@@ -72,6 +74,7 @@ export function Notebook({
 }) {
   const router = useRouter();
   const { status, progressMessage, runCode, loadDataset, submitRun } = usePyodideWorker();
+  const getSeconds = useGetExperimentSeconds();
   const [cells, setCells] = useState<Cell[]>(() => loadFromStorage(experimentId, starterCode));
   const [datasetReady, setDatasetReady] = useState(!datasetUrl);
   const [runningAll, setRunningAll] = useState(false);
@@ -106,7 +109,7 @@ export function Notebook({
     const outputLog = JSON.stringify(
       latestCells.map((c) => ({ id: c.id, output: c.output }))
     );
-    await saveNotebookProgress(experimentId, code, outputLog);
+    await saveNotebookProgress(experimentId, code, outputLog, getSeconds());
   }
 
   async function runCellAt(index: number, code: string) {
@@ -166,9 +169,17 @@ export function Notebook({
 
     const code = JSON.stringify(cells.map((c) => ({ id: c.id, code: c.code })));
     const outputLog = JSON.stringify({ stdout, stderr, result });
-    await submitExperiment(experimentId, code, outputLog, result);
-    setSubmitting(false);
-    router.refresh();
+    try {
+      await submitExperiment(experimentId, code, outputLog, result, getSeconds());
+      router.refresh();
+    } catch (err) {
+      console.error("Failed to persist submission:", err);
+      toast.error(
+        "Your score was graded, but saving it failed - check your connection and submit again so the next experiment unlocks."
+      );
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   function updateCode(index: number, code: string) {

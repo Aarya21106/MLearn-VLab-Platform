@@ -27,6 +27,8 @@ model User {
   id             String    @id @default(cuid())
   email          String    @unique
   name           String?
+  emailVerified  DateTime?
+  image          String?
   displayName    String? // user-editable, shown instead of `name` wherever the platform displays who someone is
   role           Role      @default(STUDENT)
   registerNumber String?
@@ -37,6 +39,7 @@ model User {
   submissions Submission[]
   events      ActivityEvent[]
   accounts    Account[]
+  sessions    Session[]
 }
 
 // Required by Auth.js's PrismaAdapter to link OAuth accounts (e.g. Google)
@@ -67,6 +70,8 @@ model Session {
   sessionToken String   @unique
   userId       String
   expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model VerificationToken {

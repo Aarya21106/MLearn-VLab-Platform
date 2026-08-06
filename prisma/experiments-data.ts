@@ -240,16 +240,17 @@ not accidentally computing statistics across the whole DataFrame.`,
 df = pd.read_csv("data.csv")
 
 # TODO: compute descriptive statistics for the "score" column
-mean_score = df["score"].mean()
-variance_score = df["score"].var()
-std_score = df["score"].std()
+# (mean, sample variance, sample std, 25th/50th/75th percentiles)
+mean_score = None
+variance_score = None
+std_score = None
 
-q1 = df["score"].quantile(0.25)
-median_score = df["score"].median()
-q3 = df["score"].quantile(0.75)
+q1 = None
+median_score = None
+q3 = None
 
 # TODO: estimate P(Pass) as a relative frequency from the "result" column
-p_pass = (df["result"] == "Pass").mean()
+p_pass = None
 
 print("Mean:", mean_score, "Std:", std_score)
 print("Q1/Median/Q3:", q1, median_score, q3)
@@ -362,12 +363,11 @@ FEATURES = ["size_sqft", "bedrooms", "age_years", "distance_to_city_km"]
 X = df[FEATURES]
 y = df["price_lakhs"]
 
-# TODO: fit a LinearRegression model on X, y
-model = LinearRegression()
-model.fit(X, y)
+# TODO: construct a LinearRegression model and fit it on X, y
+model = None
 
 # TODO: compute the R^2 score of the fitted model on X, y
-r2 = model.score(X, y)
+r2 = None
 
 print("Coefficients:", dict(zip(FEATURES, model.coef_)))
 print("Intercept:", model.intercept_)
@@ -467,15 +467,14 @@ FEATURES = ["income_lakhs", "credit_score", "debt_ratio"]
 X = df[FEATURES]
 y = df["approved"]
 
-# TODO: fit a LogisticRegression model
-model = LogisticRegression()
-model.fit(X, y)
+# TODO: construct a LogisticRegression model and fit it on X, y
+model = None
 
 predictions = model.predict(X)
 
 # TODO: compute accuracy and the confusion matrix
-accuracy = accuracy_score(y, predictions)
-conf_matrix = confusion_matrix(y, predictions)
+accuracy = None
+conf_matrix = None
 
 print("Accuracy:", accuracy)
 print("Confusion matrix:\\n", conf_matrix)
@@ -580,13 +579,11 @@ df = pd.read_csv("data.csv")
 X = df[["feature1", "feature2"]]
 y = df["label"]
 
-# TODO: fit a linear-kernel SVM
-model_linear = SVC(kernel="linear")
-model_linear.fit(X, y)
+# TODO: construct and fit a linear-kernel SVM
+model_linear = None
 
-# TODO: fit an RBF-kernel SVM
-model_rbf = SVC(kernel="rbf")
-model_rbf.fit(X, y)
+# TODO: construct and fit an RBF-kernel SVM
+model_rbf = None
 
 acc_linear = accuracy_score(y, model_linear.predict(X))
 acc_rbf = accuracy_score(y, model_rbf.predict(X))
@@ -701,12 +698,11 @@ from sklearn.metrics import silhouette_score
 df = pd.read_csv("data.csv")
 X = df[["annual_income_k", "spending_score"]]
 
-# TODO: fit KMeans with 4 clusters
-model = KMeans(n_clusters=4, random_state=42, n_init=10)
-model.fit(X)
+# TODO: construct a KMeans model with n_clusters=4 and fit it on X
+model = None
 
 # TODO: compute the silhouette score
-sil_score = silhouette_score(X, model.labels_)
+sil_score = None
 
 plt.scatter(X["annual_income_k"], X["spending_score"], c=model.labels_, cmap="viridis")
 plt.scatter(model.cluster_centers_[:, 0], model.cluster_centers_[:, 1], marker="X", s=200, c="red")
@@ -814,12 +810,11 @@ from sklearn.mixture import GaussianMixture
 df = pd.read_csv("data.csv")
 X = df[["annual_income_k", "spending_score"]]
 
-# TODO: fit a GaussianMixture with 4 components
-gmm = GaussianMixture(n_components=4, random_state=42, n_init=10)
-gmm.fit(X)
+# TODO: construct a GaussianMixture with n_components=4 and fit it on X
+gmm = None
 
 # TODO: get the soft (probabilistic) cluster assignments
-soft_probs = gmm.predict_proba(X)
+soft_probs = None
 hard_labels_gmm = gmm.predict(X)
 
 print("Means:\\n", gmm.means_)
@@ -929,8 +924,8 @@ from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
 df = pd.read_csv("data.csv")
 X = df[["avg_order_value", "purchase_frequency"]]
 
-# TODO: compute the Ward-linkage matrix
-Z = linkage(X, method="ward")
+# TODO: compute the Ward-linkage matrix on X
+Z = None
 
 plt.figure(figsize=(10, 5))
 dendrogram(Z, labels=df["region_id"].tolist())
@@ -940,7 +935,7 @@ plt.title("Regional sales dendrogram")
 plt.show()
 
 # TODO: cut the tree into 3 flat clusters
-cluster_labels = fcluster(Z, t=3, criterion="maxclust")
+cluster_labels = None
 
 print("Cluster sizes:", pd.Series(cluster_labels).value_counts().to_dict())
 `,
@@ -1060,13 +1055,12 @@ df = pd.read_csv("data.csv")
 FEATURES = ["math_score", "science_score", "english_score", "attendance_pct", "study_hours", "extracurricular_hours"]
 X = df[FEATURES]
 
-# TODO: standardize the features
-scaler = StandardScaler()
-X_scaled = scaler.fit_transform(X)
+# TODO: standardize the features (mean 0, variance 1)
+X_scaled = None
 
-# TODO: fit PCA with 2 components
-pca = PCA(n_components=2)
-X_pca = pca.fit_transform(X_scaled)
+# TODO: fit a PCA with n_components=2 on X_scaled and transform it
+pca = None
+X_pca = None
 
 plt.scatter(X_pca[:, 0], X_pca[:, 1], alpha=0.6)
 plt.xlabel("PC1")
@@ -1210,20 +1204,16 @@ def viterbi(obs_indices, A, B, pi):
     psi = np.zeros((n, n_states), dtype=int)
 
     # TODO: initialize delta[0] using pi and B
-    delta[0] = pi * B[:, obs_indices[0]]
+    # delta[0] = ...
 
     # TODO: fill delta and psi forward through the sequence
-    for t in range(1, n):
-        for j in range(n_states):
-            probs = delta[t - 1] * A[:, j]
-            psi[t, j] = np.argmax(probs)
-            delta[t, j] = np.max(probs) * B[j, obs_indices[t]]
+    # for t in range(1, n):
+    #     for j in range(n_states):
+    #         ...
 
-    # TODO: backtrack from the best final state to recover the full path
+    # TODO: backtrack from the best final state (argmax of delta[-1])
+    #       through psi to recover the full path
     path = np.zeros(n, dtype=int)
-    path[-1] = np.argmax(delta[-1])
-    for t in range(n - 2, -1, -1):
-        path[t] = psi[t + 1, path[t + 1]]
 
     return path
 
@@ -1325,9 +1315,8 @@ FEATURES = ["age", "monthly_income_k", "years_at_company", "job_satisfaction"]
 X = df[FEATURES]
 y = df["attrition"]
 
-# TODO: fit a DecisionTreeClassifier with max_depth=4
-model = DecisionTreeClassifier(max_depth=4, random_state=42)
-model.fit(X, y)
+# TODO: construct a DecisionTreeClassifier with max_depth=4 and fit it on X, y
+model = None
 
 predictions = model.predict(X)
 accuracy = accuracy_score(y, predictions)
@@ -1447,21 +1436,15 @@ FEATURES = ["age", "monthly_income_k", "years_at_company", "job_satisfaction"]
 X = df[FEATURES]
 y = df["attrition"]
 
-# TODO: fit a single decision tree (baseline)
-tree_model = DecisionTreeClassifier(max_depth=4, random_state=42)
-tree_model.fit(X, y)
+# TODO: construct and fit a single decision tree (baseline), max_depth=4
+tree_model = None
 
-# TODO: fit a bagged ensemble (Random Forest)
-rf_model = RandomForestClassifier(n_estimators=100, max_depth=4, random_state=42)
-rf_model.fit(X, y)
+# TODO: construct and fit a bagged ensemble (RandomForestClassifier, n_estimators=100, max_depth=4)
+rf_model = None
 
-# TODO: fit a boosted ensemble (AdaBoost)
-ada_model = AdaBoostClassifier(
-    estimator=DecisionTreeClassifier(max_depth=2),
-    n_estimators=100,
-    random_state=42,
-)
-ada_model.fit(X, y)
+# TODO: construct and fit a boosted ensemble (AdaBoostClassifier with a
+#       shallow DecisionTreeClassifier(max_depth=2) as its base estimator, n_estimators=100)
+ada_model = None
 
 acc_tree = accuracy_score(y, tree_model.predict(X))
 acc_rf = accuracy_score(y, rf_model.predict(X))

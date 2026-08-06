@@ -11,6 +11,8 @@ const DUMMY_ADMIN_AUTH_ENABLED = process.env.ENABLE_DUMMY_ADMIN_AUTH === "true";
 
 const providers: Provider[] = [
   Google({
+    clientId: process.env.AUTH_GOOGLE_ID || process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.AUTH_GOOGLE_SECRET || process.env.GOOGLE_CLIENT_SECRET,
     authorization: {
       params: {
         prompt: "select_account",
@@ -89,24 +91,54 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async signIn({ user }) {
       if (!user.id) return;
 
-      const isAllowlistedAdmin =
-        user.email === process.env.ADMIN_EMAIL_1 ||
-        user.email === process.env.ADMIN_EMAIL_2;
+      try {
+        const isAllowlistedAdmin =
+          user.email === process.env.ADMIN_EMAIL_1 ||
+          user.email === process.env.ADMIN_EMAIL_2;
 
-      const dbUser = await prisma.user.update({
-        where: { id: user.id },
-        data: {
-          lastLoginAt: new Date(),
-          ...(isAllowlistedAdmin ? { role: "ADMIN" as const } : {}),
-        },
-      });
+        const dbUser = await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            lastLoginAt: new Date(),
+            ...(isAllowlistedAdmin ? { role: "ADMIN" as const } : {}),
+          },
+        });
 
-      await prisma.activityEvent.create({
-        data: {
-          userId: dbUser.id,
-          type: "login",
-        },
-      });
+        await prisma.activityEvent.create({
+          data: {
+            userId: dbUser.id,
+            type: "login",
+          },
+        });
+      } catch (err) {
+        console.error("Failed to record signIn event or update lastLoginAt:", err);
+      }
+    },
+    async signOut(message) {
+      try {
+        let userId: string | undefined;
+        if ("token" in message && message.token && typeof message.token.id === "string") {
+          userId = message.token.id;
+        } else if (
+          "session" in message &&
+          message.session &&
+          typeof message.session === "object" &&
+          "user" in message.session &&
+          (message.session.user as { id?: string })?.id
+        ) {
+          userId = (message.session.user as { id?: string }).id;
+        }
+        if (userId) {
+          await prisma.activityEvent.create({
+            data: {
+              userId,
+              type: "logout",
+            },
+          });
+        }
+      } catch (err) {
+        console.error("Failed to record signOut event:", err);
+      }
     },
   },
 });
