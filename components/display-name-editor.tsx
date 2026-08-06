@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,10 +25,16 @@ export function DisplayNameEditor({ currentName }: { currentName: string }) {
 
   async function handleSave() {
     setSaving(true);
-    await updateDisplayName(value);
-    setSaving(false);
-    setOpen(false);
-    router.refresh();
+    try {
+      await updateDisplayName(value);
+      setOpen(false);
+      router.refresh();
+    } catch (err) {
+      console.error("Failed to update display name:", err);
+      toast.error("Couldn't save your display name - check your connection and try again.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (

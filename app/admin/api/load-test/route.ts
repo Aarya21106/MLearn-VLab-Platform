@@ -83,20 +83,7 @@ export async function POST() {
               metadata: { score: 10, status: "COMPLETED" },
             },
           });
-
-          // 5. Cleanup Submission and Events
-          await prisma.activityEvent.deleteMany({
-            where: { userId: user.id },
-          });
-          await prisma.submission.delete({
-            where: { id: submission.id },
-          });
         }
-
-        // 6. Cleanup Student
-        await prisma.user.delete({
-          where: { id: user.id },
-        });
 
         const taskEnd = Date.now();
         latencies.push(taskEnd - taskStart);
@@ -105,6 +92,17 @@ export async function POST() {
         failureCount++;
         const errMsg = err instanceof Error ? err.message : String(err);
         errors.push(errMsg);
+      } finally {
+        // Always clean up this task's rows, however far it got - a task that
+        // fails partway (e.g. hitting Supabase's free-tier connection limit,
+        // the exact thing this tool is meant to probe) must not leave a
+        // permanent fake student row polluting the real admin stats.
+        // deleteMany (not delete) so a step that never ran is a silent no-op
+        // rather than a "record not found" throw, and children are removed
+        // before the parent User row to satisfy the FK constraint.
+        await prisma.activityEvent.deleteMany({ where: { userId: studentId } }).catch(() => {});
+        await prisma.submission.deleteMany({ where: { userId: studentId } }).catch(() => {});
+        await prisma.user.deleteMany({ where: { id: studentId } }).catch(() => {});
       }
     });
 

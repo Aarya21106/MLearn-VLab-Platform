@@ -32,6 +32,12 @@ type Pending<T> = {
 
 let sharedWorker: Worker | null = null;
 let sharedInitPromise: Promise<void> | null = null;
+// Tracks which experiment currently owns the shared kernel's interactive
+// globals, so switching experiments resets Python state instead of leaking
+// variables (e.g. a stale `df` or `model`) from whatever was last run on a
+// previous experiment's notebook. Submit already runs in a fresh namespace
+// regardless, so this only affects the interactive Run button's behavior.
+let sessionOwnerExperimentId: string | null = null;
 
 function getWorker(): Worker {
   if (!sharedWorker) {
@@ -119,6 +125,27 @@ export function usePyodideWorker() {
     });
   }, []);
 
+  /** Resets the shared kernel's interactive Python globals if the given
+   * experiment isn't the one that last owned them - so opening a new
+   * experiment doesn't inherit variables left over from a previous one.
+   * A no-op (and safe to call every mount) when it's already the owner. */
+  const resetSessionForExperiment = useCallback((experimentId: string): Promise<void> => {
+    if (sessionOwnerExperimentId === experimentId) return Promise.resolve();
+    sessionOwnerExperimentId = experimentId;
+
+    const worker = getWorker();
+    return new Promise((resolve) => {
+      const handler = (event: MessageEvent) => {
+        if (event.data.type === "session-reset") {
+          worker.removeEventListener("message", handler);
+          resolve();
+        }
+      };
+      worker.addEventListener("message", handler);
+      worker.postMessage({ type: "reset-session" });
+    });
+  }, []);
+
   const loadDataset = useCallback((filename: string, content: string): Promise<void> => {
     const worker = getWorker();
     return new Promise((resolve) => {
@@ -145,5 +172,5 @@ export function usePyodideWorker() {
     []
   );
 
-  return { status, progressMessage, runCode, loadDataset, submitRun };
+  return { status, progressMessage, runCode, loadDataset, submitRun, resetSessionForExperiment };
 }

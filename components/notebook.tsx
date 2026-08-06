@@ -73,16 +73,32 @@ export function Notebook({
   maxScore: number;
 }) {
   const router = useRouter();
-  const { status, progressMessage, runCode, loadDataset, submitRun } = usePyodideWorker();
+  const { status, progressMessage, runCode, loadDataset, submitRun, resetSessionForExperiment } =
+    usePyodideWorker();
   const getSeconds = useGetExperimentSeconds();
   const [cells, setCells] = useState<Cell[]>(() => loadFromStorage(experimentId, starterCode));
+  const [sessionReady, setSessionReady] = useState(false);
   const [datasetReady, setDatasetReady] = useState(!datasetUrl);
   const [runningAll, setRunningAll] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitBanner, setSubmitBanner] = useState<SubmitBannerState | null>(null);
 
+  // Reset the shared kernel's interactive globals whenever this mounts for a
+  // different experiment than last owned them, so opening experiment 3 right
+  // after experiment 2 doesn't silently inherit experiment 2's `df`/`model`.
   useEffect(() => {
-    if (status !== "ready" || !datasetUrl || datasetReady) return;
+    if (status !== "ready") return;
+    let cancelled = false;
+    resetSessionForExperiment(experimentId).then(() => {
+      if (!cancelled) setSessionReady(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [status, experimentId, resetSessionForExperiment]);
+
+  useEffect(() => {
+    if (status !== "ready" || !sessionReady || !datasetUrl || datasetReady) return;
     let cancelled = false;
     (async () => {
       const res = await fetch(datasetUrl);
@@ -93,7 +109,7 @@ export function Notebook({
     return () => {
       cancelled = true;
     };
-  }, [status, datasetUrl, datasetReady, loadDataset]);
+  }, [status, sessionReady, datasetUrl, datasetReady, loadDataset]);
 
   useEffect(() => {
     window.localStorage.setItem(
@@ -102,7 +118,7 @@ export function Notebook({
     );
   }, [cells, experimentId]);
 
-  const busy = status !== "ready" || (!!datasetUrl && !datasetReady);
+  const busy = status !== "ready" || !sessionReady || (!!datasetUrl && !datasetReady);
 
   async function persistProgress(latestCells: Cell[]) {
     const code = JSON.stringify(latestCells.map((c) => ({ id: c.id, code: c.code })));

@@ -138,6 +138,20 @@ self.onmessage = async (event) => {
     return;
   }
 
+  if (type === "reset-session") {
+    try {
+      const pyodide = await getPyodide();
+      const dict = pyodide.globals.get("dict");
+      if (sessionGlobals && sessionGlobals.destroy) sessionGlobals.destroy();
+      sessionGlobals = dict();
+      dict.destroy();
+      postMessage({ type: "session-reset" });
+    } catch (err) {
+      postMessage({ type: "session-reset", error: err && err.message ? err.message : String(err) });
+    }
+    return;
+  }
+
   if (type === "load-dataset") {
     const { dataset } = event.data;
     try {
