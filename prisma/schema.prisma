@@ -1,0 +1,125 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  STUDENT
+  ADMIN
+}
+
+enum SubmissionStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  FAILED_CHECKS
+}
+
+model User {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  name           String?
+  displayName    String? // user-editable, shown instead of `name` wherever the platform displays who someone is
+  role           Role      @default(STUDENT)
+  registerNumber String?
+  passwordHash   String? // only set for credentials-based accounts (the two dummy admins)
+  createdAt      DateTime  @default(now())
+  lastLoginAt    DateTime?
+
+  submissions Submission[]
+  events      ActivityEvent[]
+  accounts    Account[]
+}
+
+// Required by Auth.js's PrismaAdapter to link OAuth accounts (e.g. Google)
+// to a User. Session/VerificationToken aren't used at runtime since auth
+// uses the JWT session strategy, but PrismaAdapter's generated methods
+// reference these models regardless, so they must exist in the schema.
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Experiment {
+  id               String  @id @default(cuid())
+  orderIndex       Int     @unique // 1 through 12, controls sidebar order + unlock sequence
+  title            String
+  syllabusUnit     String
+  questionMd       String  @db.Text
+  manualMd         String  @db.Text
+  hintsMd          String  @db.Text
+  starterCode      String  @db.Text
+  datasetUrl       String?
+  datasetPreviewMd String? @db.Text
+  autograderCode   String  @db.Text
+  maxScore         Int     @default(100)
+  estMinutes       Int     @default(45)
+
+  submissions Submission[]
+}
+
+model Submission {
+  id               String    @id @default(cuid())
+  userId           String
+  user             User      @relation(fields: [userId], references: [id])
+  experimentId     String
+  experiment       Experiment @relation(fields: [experimentId], references: [id])
+  code             String    @db.Text
+  outputLog        String    @db.Text
+  status           SubmissionStatus @default(NOT_STARTED)
+  score            Int?
+  autograderReport String?   @db.Text // JSON: which checks passed/failed
+  timeSpentSeconds Int       @default(0)
+  attemptNumber    Int       @default(1)
+  startedAt        DateTime  @default(now())
+  submittedAt      DateTime?
+
+  @@unique([userId, experimentId, attemptNumber])
+}
+
+model ActivityEvent {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  type         String // "login" | "logout" | "experiment_opened" | "cell_run" | "submit"
+  experimentId String?
+  metadata     Json?
+  createdAt    DateTime @default(now())
+}
