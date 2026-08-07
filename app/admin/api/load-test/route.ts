@@ -4,9 +4,43 @@ import { prisma } from "@/lib/prisma";
 
 export const maxDuration = 60; // Allow up to 60s for the load test
 
+const TEST_USER_PREFIX = "test_student_loadtest_";
+
+/** Deletes every load-test artifact still in the DB, regardless of which run
+ * created it. Needed because a per-task try/finally can't protect against
+ * the platform hard-killing the whole function on a timeout - when that
+ * happens the process is torn down before any in-process cleanup code
+ * (including finally blocks) gets a chance to run, so some runs will always
+ * have a chance of leaving real orphans behind. This sweep is what actually
+ * guarantees they don't stay corrupting admin stats indefinitely. */
+async function sweepOrphanedTestUsers() {
+  const events = await prisma.activityEvent.deleteMany({ where: { userId: { startsWith: TEST_USER_PREFIX } } });
+  const submissions = await prisma.submission.deleteMany({ where: { userId: { startsWith: TEST_USER_PREFIX } } });
+  const users = await prisma.user.deleteMany({ where: { id: { startsWith: TEST_USER_PREFIX } } });
+  return { events: events.count, submissions: submissions.count, users: users.count };
+}
+
+/** Manual cleanup - lets an admin sweep leftover test data on demand without
+ * having to re-run (and risk re-timing-out) the full load test. */
+export async function DELETE() {
+  try {
+    await requireAdmin();
+    const removed = await sweepOrphanedTestUsers();
+    return NextResponse.json({ success: true, removed });
+  } catch (err: unknown) {
+    const errMsg = err instanceof Error ? err.message : "Failed to clean up test data";
+    return NextResponse.json({ success: false, error: errMsg }, { status: 500 });
+  }
+}
+
 export async function POST() {
   try {
     await requireAdmin();
+
+    // Self-heal before every run: sweep any orphans a previous run's timeout
+    // left behind, so admin stats never stay corrupted for more than the
+    // time until the next run (or the manual cleanup button) fires.
+    await sweepOrphanedTestUsers();
 
     const CONCURRENT_USERS = 130;
     const startTime = Date.now();

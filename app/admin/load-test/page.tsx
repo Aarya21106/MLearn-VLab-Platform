@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Zap, AlertCircle, CheckCircle2, Loader2, Users, ArrowLeft } from "lucide-react";
+import { Zap, AlertCircle, CheckCircle2, Loader2, Users, ArrowLeft, Trash2 } from "lucide-react";
 
 type LoadTestResult = {
   success: boolean;
@@ -18,10 +18,39 @@ type LoadTestResult = {
   errors: string[];
 };
 
+type CleanupResult = { events: number; submissions: number; users: number };
+
 export default function LoadTestPage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<LoadTestResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [cleaningUp, setCleaningUp] = useState(false);
+  const [cleanupResult, setCleanupResult] = useState<CleanupResult | null>(null);
+  const [cleanupError, setCleanupError] = useState<string | null>(null);
+
+  async function cleanUpTestData() {
+    setCleaningUp(true);
+    setCleanupError(null);
+    setCleanupResult(null);
+
+    try {
+      const res = await fetch("/admin/api/load-test", { method: "DELETE" });
+      const contentType = res.headers.get("content-type") ?? "";
+      if (!contentType.includes("application/json")) {
+        throw new Error(`Server returned an unexpected non-JSON response (status ${res.status}).`);
+      }
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to clean up test data");
+      }
+      setCleanupResult(data.removed);
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : "An error occurred while cleaning up test data";
+      setCleanupError(errMsg);
+    } finally {
+      setCleaningUp(false);
+    }
+  }
 
   async function startLoadTest() {
     setLoading(true);
@@ -106,7 +135,7 @@ export default function LoadTestPage() {
 
                 <Button
                   onClick={startLoadTest}
-                  disabled={loading}
+                  disabled={loading || cleaningUp}
                   size="lg"
                   className="w-full relative overflow-hidden transition-all duration-300 transform active:scale-95 cursor-pointer"
                 >
@@ -122,6 +151,48 @@ export default function LoadTestPage() {
                     </>
                   )}
                 </Button>
+
+                <Button
+                  onClick={cleanUpTestData}
+                  disabled={loading || cleaningUp}
+                  size="sm"
+                  variant="outline"
+                  className="w-full cursor-pointer"
+                >
+                  {cleaningUp ? (
+                    <>
+                      <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                      Cleaning up...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="mr-2 h-3.5 w-3.5" />
+                      Clean up leftover test data
+                    </>
+                  )}
+                </Button>
+                <p className="text-xs text-muted-foreground -mt-2">
+                  Every run of the test above also sweeps this automatically first, but if a
+                  run gets killed by a platform timeout partway through, use this to remove
+                  any fake student rows it left behind without waiting for another run.
+                </p>
+
+                {cleanupError && (
+                  <div className="flex items-start gap-2 rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-xs text-destructive">
+                    <AlertCircle className="size-4 shrink-0 mt-0.5" />
+                    <span>{cleanupError}</span>
+                  </div>
+                )}
+                {cleanupResult && (
+                  <div className="flex items-start gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-3 text-xs text-emerald-700 dark:text-emerald-400">
+                    <CheckCircle2 className="size-4 shrink-0 mt-0.5" />
+                    <span>
+                      Removed {cleanupResult.users} test user{cleanupResult.users === 1 ? "" : "s"},{" "}
+                      {cleanupResult.submissions} submission{cleanupResult.submissions === 1 ? "" : "s"}, and{" "}
+                      {cleanupResult.events} event{cleanupResult.events === 1 ? "" : "s"}.
+                    </span>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
