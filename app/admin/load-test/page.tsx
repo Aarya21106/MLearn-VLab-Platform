@@ -32,6 +32,20 @@ export default function LoadTestPage() {
       const res = await fetch("/admin/api/load-test", {
         method: "POST",
       });
+
+      const contentType = res.headers.get("content-type") ?? "";
+      if (!contentType.includes("application/json")) {
+        // The platform (not our own route code) terminated the request before
+        // it could respond - e.g. a serverless function timeout. Vercel's own
+        // error page is plain text/HTML, not JSON, so res.json() would throw
+        // a cryptic "Unexpected token" parse error instead of a clear message.
+        throw new Error(
+          res.status === 504 || res.status === 502
+            ? "The load test exceeded the server's execution time limit and was terminated by the platform before finishing. This can happen at 130 concurrency on a free-tier plan - the function's actual time budget may be shorter than the 60s this tool requests."
+            : `Server returned an unexpected non-JSON response (status ${res.status}).`
+        );
+      }
+
       const data = await res.json();
       if (!res.ok || !data.success) {
         throw new Error(data.error || "Failed to complete load test");

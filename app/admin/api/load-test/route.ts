@@ -19,7 +19,12 @@ export async function POST() {
 
     // Create 130 unique dummy user email/ID combinations
     const testBatchId = `loadtest_${Date.now()}`;
-    
+
+    // Fetched once, not once per task - this was previously issued as 130
+    // identical concurrent queries, adding needless pressure on exactly the
+    // connection pool this tool is trying to measure.
+    const experiment = await prisma.experiment.findFirst({ select: { id: true } });
+
     // We execute concurrent mock database requests
     const tasks = Array.from({ length: CONCURRENT_USERS }).map(async (_, index) => {
       const studentId = `test_student_${testBatchId}_${index}`;
@@ -38,11 +43,6 @@ export async function POST() {
             displayName: `LoadTest Student ${index}`,
             role: "STUDENT",
           },
-        });
-
-        // Get an experiment to submit for
-        const experiment = await prisma.experiment.findFirst({
-          select: { id: true },
         });
 
         if (experiment) {
