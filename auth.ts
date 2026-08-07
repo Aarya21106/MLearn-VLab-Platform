@@ -18,6 +18,14 @@ const providers: Provider[] = [
         prompt: "select_account",
       },
     },
+    // The two dummy admin accounts are seeded directly (for the credentials
+    // login) without ever going through Google OAuth, so they have no linked
+    // Account row. Without this, signing in with Google using that same
+    // email hits OAuthAccountNotLinked instead of attaching to the existing
+    // user. SRM hasn't issued @srmist.edu.in Google Workspace access to
+    // students (they all sign in with personal email), so the only rows
+    // this can ever silently link to are those two known admin accounts.
+    allowDangerousEmailAccountLinking: true,
   }),
 ];
 
