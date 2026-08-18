@@ -1,10 +1,10 @@
 import type { NextAuthConfig } from "next-auth";
 
 /**
- * Edge-safe slice of the auth config, used by middleware.ts. Must not pull
- * in Node-only deps (bcryptjs, Prisma adapter, DB calls) - middleware runs
- * in the Edge runtime with a strict bundle size limit. The full config with
- * providers and the adapter lives in auth.ts (Node.js runtime only).
+ * Edge-safe slice of the auth config, used by proxy.ts. Must not pull in
+ * Node-only deps (bcryptjs, DB calls) - proxy runs in the Edge runtime with
+ * a strict bundle size limit. The full config with providers lives in
+ * auth.ts (Node.js runtime only).
  */
 export const authConfig = {
   trustHost: true,

@@ -8,9 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/password-input";
 
-export function AdminSignInForm({ onCancel }: { onCancel: () => void }) {
+export function StudentSignInForm() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [registerNumber, setRegisterNumber] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -20,8 +20,8 @@ export function AdminSignInForm({ onCancel }: { onCancel: () => void }) {
     setSubmitting(true);
     setError(null);
 
-    const result = await signIn("admin", {
-      email,
+    const result = await signIn("student", {
+      registerNumber,
       password,
       redirect: false,
     });
@@ -29,7 +29,7 @@ export function AdminSignInForm({ onCancel }: { onCancel: () => void }) {
     setSubmitting(false);
 
     if (result?.error) {
-      setError("Invalid credentials");
+      setError("Invalid registration number or password");
       return;
     }
 
@@ -39,22 +39,21 @@ export function AdminSignInForm({ onCancel }: { onCancel: () => void }) {
 
   return (
     <form onSubmit={handleSubmit} className="w-full space-y-3">
-      <h2 className="text-sm font-semibold text-foreground">Faculty Login</h2>
       <div className="space-y-1.5">
-        <Label htmlFor="admin-email">Email</Label>
+        <Label htmlFor="student-reg-no">Registration number</Label>
         <Input
-          id="admin-email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          id="student-reg-no"
+          value={registerNumber}
+          onChange={(e) => setRegisterNumber(e.target.value)}
           required
           autoComplete="username"
+          autoFocus
         />
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="admin-password">Password</Label>
+        <Label htmlFor="student-password">Password</Label>
         <PasswordInput
-          id="admin-password"
+          id="student-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
@@ -62,14 +61,9 @@ export function AdminSignInForm({ onCancel }: { onCancel: () => void }) {
         />
       </div>
       {error && <p className="text-sm text-destructive">{error}</p>}
-      <div className="flex gap-2 pt-1">
-        <Button type="submit" disabled={submitting} className="flex-1">
-          {submitting ? "Signing in..." : "Sign in"}
-        </Button>
-        <Button type="button" variant="ghost" onClick={onCancel}>
-          Cancel
-        </Button>
-      </div>
+      <Button type="submit" disabled={submitting} className="w-full">
+        {submitting ? "Signing in..." : "Sign in"}
+      </Button>
     </form>
   );
 }

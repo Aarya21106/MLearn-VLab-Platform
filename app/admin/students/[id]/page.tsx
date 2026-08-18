@@ -23,11 +23,17 @@ export default async function AdminStudentPage({
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-8">
-      <Link href="/admin" className="text-sm text-muted-foreground hover:underline">
-        ← Overview
+      <Link
+        href={user.classroomId ? `/admin/classrooms/${user.classroomId}` : "/admin"}
+        className="text-sm text-muted-foreground hover:underline"
+      >
+        ← {user.classroomId ? "Classroom" : "Classrooms"}
       </Link>
       <h1 className="mt-2 text-xl font-semibold text-foreground">{displayNameOf(user)}</h1>
-      <p className="mb-6 text-sm text-muted-foreground">{user.email}</p>
+      <p className="mb-6 text-sm text-muted-foreground">
+        {user.registerNumber ?? user.email}
+        {user.section ? ` · Section ${user.section}` : ""}
+      </p>
 
       <h2 className="mb-3 text-sm font-medium text-muted-foreground">Experiments</h2>
       <div className="mb-8 rounded-lg border border-border">

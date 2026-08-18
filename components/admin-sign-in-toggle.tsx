@@ -14,7 +14,7 @@ export function AdminSignInToggle() {
       onClick={() => setOpen(true)}
       className="text-sm text-muted-foreground underline-offset-4 hover:underline"
     >
-      Admin sign-in
+      Faculty / Admin sign-in
     </button>
   );
 }

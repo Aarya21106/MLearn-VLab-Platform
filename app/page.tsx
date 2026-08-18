@@ -1,11 +1,8 @@
-import { GoogleSignInButton } from "@/components/google-sign-in-button";
+import { StudentSignInForm } from "@/components/student-sign-in-form";
 import { AdminSignInToggle } from "@/components/admin-sign-in-toggle";
 import { DeviceGate } from "@/components/device-gate";
 
 export default function LandingPage() {
-  const dummyAdminAuthEnabled =
-    process.env.NEXT_PUBLIC_ENABLE_DUMMY_ADMIN_AUTH === "true";
-
   return (
     <DeviceGate>
       <main className="relative flex min-h-screen flex-1 flex-col items-center justify-center bg-background px-4 overflow-hidden">
@@ -31,12 +28,10 @@ export default function LandingPage() {
           </div>
 
           <div className="flex w-full flex-col items-center gap-4">
-            <GoogleSignInButton />
-            {dummyAdminAuthEnabled && (
-              <div className="w-full flex flex-col items-center gap-2 border-t border-border/80 pt-4">
-                <AdminSignInToggle />
-              </div>
-            )}
+            <StudentSignInForm />
+            <div className="w-full flex flex-col items-center gap-2 border-t border-border/80 pt-4">
+              <AdminSignInToggle />
+            </div>
           </div>
         </div>
 

@@ -18,8 +18,8 @@ export default async function AdminExperimentPage({
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-8">
-      <Link href="/admin" className="text-sm text-muted-foreground hover:underline">
-        ← Overview
+      <Link href="/admin/experiments" className="text-sm text-muted-foreground hover:underline">
+        ← Experiments
       </Link>
       <h1 className="mt-2 mb-6 text-xl font-semibold text-foreground">
         {stats.experiment.orderIndex}. {stats.experiment.title}
@@ -66,7 +66,7 @@ export default async function AdminExperimentPage({
                 <Link href={`/admin/students/${s.id}`} className="hover:underline">
                   {displayNameOf(s)}
                 </Link>
-                <span className="ml-2 text-muted-foreground">{s.email}</span>
+                <span className="ml-2 text-muted-foreground">{s.registerNumber}</span>
               </li>
             ))}
           </ul>

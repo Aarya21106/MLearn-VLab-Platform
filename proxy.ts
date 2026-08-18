@@ -4,6 +4,8 @@ import { authConfig } from "@/auth.config";
 
 const { auth } = NextAuth(authConfig);
 
+// Next.js 16 renamed Middleware to Proxy (same runtime, same matcher API);
+// see node_modules/next/dist/docs/01-app/01-getting-started/16-proxy.md.
 export default auth((req) => {
   const { pathname } = req.nextUrl;
   const session = req.auth;

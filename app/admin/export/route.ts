@@ -12,7 +12,7 @@ export async function GET() {
   await requireAdmin();
 
   const [students, experiments, submissions] = await Promise.all([
-    prisma.user.findMany({ where: { role: "STUDENT" }, orderBy: { email: "asc" } }),
+    prisma.user.findMany({ where: { role: "STUDENT" }, orderBy: { registerNumber: "asc" } }),
     getAllExperiments(),
     prisma.submission.findMany({
       select: { userId: true, experimentId: true, status: true, score: true, timeSpentSeconds: true },
@@ -32,7 +32,8 @@ export async function GET() {
 
   const header = [
     "Name",
-    "Email",
+    "Registration Number",
+    "Section",
     ...experiments.flatMap((e) => [`${e.title} Score`, `${e.title} Time (s)`, `${e.title} Status`]),
     "Total Score",
     "Completed Count",
@@ -49,7 +50,14 @@ export async function GET() {
       }
       return [entry?.score ?? "", entry?.timeSpentSeconds ?? "", entry?.status ?? "NOT_STARTED"];
     });
-    return [displayNameOf(student), student.email, ...perExperiment, totalScore, completedCount];
+    return [
+      displayNameOf(student),
+      student.registerNumber ?? "",
+      student.section ?? "",
+      ...perExperiment,
+      totalScore,
+      completedCount,
+    ];
   });
 
   const csv = [header, ...rows].map((row) => row.map(csvCell).join(",")).join("\n");

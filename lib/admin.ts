@@ -2,9 +2,9 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { displayNameOf } from "@/lib/display-name";
 
-export async function getOverviewStats() {
+export async function getOverviewStats(classroomId?: string) {
   const [students, submissions, totalExperiments] = await Promise.all([
-    prisma.user.findMany({ where: { role: "STUDENT" }, select: { id: true } }),
+    prisma.user.findMany({ where: { role: "STUDENT", classroomId }, select: { id: true } }),
     prisma.submission.findMany({
       select: { userId: true, experimentId: true, status: true, score: true },
     }),
@@ -42,17 +42,17 @@ export async function getOverviewStats() {
 export type LeaderboardRow = {
   id: string;
   name: string;
-  email: string;
+  registerNumber: string | null;
   completedCount: number;
   totalScore: number;
   avgTimeSeconds: number;
 };
 
-export async function getLeaderboard(): Promise<LeaderboardRow[]> {
+export async function getLeaderboard(classroomId?: string): Promise<LeaderboardRow[]> {
   const [students, submissions] = await Promise.all([
     prisma.user.findMany({
-      where: { role: "STUDENT" },
-      select: { id: true, name: true, email: true, displayName: true },
+      where: { role: "STUDENT", classroomId },
+      select: { id: true, name: true, email: true, registerNumber: true, displayName: true },
     }),
     prisma.submission.findMany({
       select: { userId: true, experimentId: true, status: true, score: true, timeSpentSeconds: true },
@@ -84,7 +84,7 @@ export async function getLeaderboard(): Promise<LeaderboardRow[]> {
     .map((e) => ({
       id: e.id,
       name: displayNameOf(e),
-      email: e.email,
+      registerNumber: e.registerNumber,
       completedCount: e.bestScoreByExperiment.size,
       totalScore: [...e.bestScoreByExperiment.values()].reduce((a, b) => a + b, 0),
       avgTimeSeconds: e.timeSamples.length
@@ -99,7 +99,7 @@ export async function getExperimentStats(experimentId: string) {
     prisma.experiment.findUnique({ where: { id: experimentId } }),
     prisma.user.findMany({
       where: { role: "STUDENT" },
-      select: { id: true, name: true, email: true, displayName: true },
+      select: { id: true, name: true, email: true, registerNumber: true, displayName: true },
     }),
     prisma.submission.findMany({
       where: { experimentId },

@@ -53,7 +53,7 @@ export function LeaderboardTable({ rows }: { rows: LeaderboardRow[] }) {
   const sorted = [...rows].sort((a, b) => {
     let cmp = 0;
     if (sortKey === "name") {
-      cmp = (a.name ?? a.email).localeCompare(b.name ?? b.email);
+      cmp = (a.name ?? a.registerNumber ?? "").localeCompare(b.name ?? b.registerNumber ?? "");
     } else {
       cmp = a[sortKey] - b[sortKey];
     }
@@ -78,7 +78,7 @@ export function LeaderboardTable({ rows }: { rows: LeaderboardRow[] }) {
             <TableCell>
               <Link href={`/admin/students/${row.id}`} className="hover:underline">
                 <div className="font-medium">{row.name ?? "—"}</div>
-                <div className="text-xs text-muted-foreground">{row.email}</div>
+                <div className="text-xs text-muted-foreground">{row.registerNumber}</div>
               </Link>
             </TableCell>
             <TableCell>{row.completedCount}</TableCell>

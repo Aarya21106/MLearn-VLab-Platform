@@ -1,7 +1,8 @@
 export function displayNameOf(user: {
   displayName?: string | null;
   name?: string | null;
-  email: string;
+  registerNumber?: string | null;
+  email?: string | null;
 }): string {
-  return user.displayName || user.name || user.email;
+  return user.displayName || user.name || user.registerNumber || user.email || "Unknown";
 }

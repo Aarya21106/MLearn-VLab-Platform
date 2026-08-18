@@ -3,14 +3,17 @@ import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
-const DUMMY_ADMIN_PASSWORD = "admin@123";
+const DEFAULT_ADMIN_PASSWORD = process.env.ADMIN_SEED_PASSWORD ?? "admin@123";
+const ADMIN_COUNT = 5;
 
 async function main() {
-  const email1 = process.env.ADMIN_EMAIL_1 ?? "admin1@srmist.edu.in";
-  const email2 = process.env.ADMIN_EMAIL_2 ?? "admin2@srmist.edu.in";
-  const passwordHash = bcrypt.hashSync(DUMMY_ADMIN_PASSWORD, 10);
+  const emails = Array.from(
+    { length: ADMIN_COUNT },
+    (_, i) => process.env[`ADMIN_EMAIL_${i + 1}`] ?? `admin${i + 1}@srmist.edu.in`
+  );
+  const passwordHash = bcrypt.hashSync(DEFAULT_ADMIN_PASSWORD, 10);
 
-  for (const email of [email1, email2]) {
+  for (const email of emails) {
     await prisma.user.upsert({
       where: { email },
       update: { role: "ADMIN", passwordHash },
@@ -19,7 +22,7 @@ async function main() {
   }
 
   console.warn(
-    "Dummy admin credentials seeded - disable ENABLE_DUMMY_ADMIN_AUTH before any real deployment."
+    `Faculty/admin accounts seeded for: ${emails.join(", ")} - change passwords after first login.`
   );
 }
 
